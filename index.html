@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>memo</title>
+  <script>
+    (function() {
+      const saved = localStorage.getItem('theme') || 'system';
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.dataset.theme =
+        saved === 'dark' ? 'dark' :
+        saved === 'light' ? 'light' :
+        (prefersDark ? 'dark' : 'light');
+    })();
+  </script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    /* ── CSS Custom Properties (Material Design 3) ── */
+    :root {
+      --md-primary: #1a73e8;
+      --md-primary-hover: #1557b0;
+      --md-on-primary: #ffffff;
+      --md-surface: #ffffff;
+      --md-surface-variant: #f8f9fa;
+      --md-on-surface: #202124;
+      --md-on-surface-sub: #5f6368;
+      --md-outline: #dadce0;
+      --md-error: #d93025;
+      --md-ripple: rgba(26, 115, 232, 0.12);
+      --md-inverse-surface: #303134;
+      --md-on-inverse-surface: #f1f3f4;
+      --shadow-1: 0 1px 3px rgba(60,64,67,.3), 0 1px 2px rgba(60,64,67,.15);
+      --shadow-2: 0 2px 6px rgba(60,64,67,.3), 0 1px 3px rgba(60,64,67,.15);
+      --radius: 8px;
+      --font-ui: 'Google Sans', 'Segoe UI', Roboto, Arial, sans-serif;
+      --font-mono: 'Roboto Mono', 'Cascadia Code', 'Consolas', monospace;
+      /* VS Code tab colors — light */
+      --vscode-strip:           #ececec;
+      --vscode-tab-active-bg:   var(--md-surface);
+      --vscode-tab-inactive-bg: #e8e8e8;
+      --vscode-tab-hover-bg:    #e0e0e0;
+      --vscode-tab-fg-active:   #333333;
+      --vscode-tab-fg-inactive: #717171;
+      --vscode-tab-accent:      #005fb8;
+      --vscode-tab-border:      #d4d4d4;
+      --vscode-close-hover:     rgba(0,0,0,.12);
+    }
+
+    /* ── Dark Theme ── */
+    [data-theme="dark"] {
+      --md-primary: #8ab4f8;
+      --md-primary-hover: #aecbfa;
+      --md-on-primary: #003063;
+      --md-surface: #202124;
+      --md-surface-variant: #2d2e31;
+      --md-on-surface: #e8eaed;
+      --md-on-surface-sub: #9aa0a6;
+      --md-outline: #3c4043;
+      --md-error: #f28b82;
+      --md-ripple: rgba(138, 180, 248, 0.12);
+      --md-inverse-surface: #e8eaed;
+      --md-on-inverse-surface: #303134;
+      --shadow-1: 0 1px 3px rgba(0,0,0,.6), 0 1px 2px rgba(0,0,0,.4);
+      --shadow-2: 0 2px 6px rgba(0,0,0,.6), 0 1px 3px rgba(0,0,0,.4);
+      /* VS Code tab colors — dark */
+      --vscode-strip:           #252526;
+      --vscode-tab-active-bg:   var(--md-surface);
+      --vscode-tab-inactive-bg: #2d2d2d;
+      --vscode-tab-hover-bg:    #2a2a2a;
+      --vscode-tab-fg-active:   #cccccc;
+      --vscode-tab-fg-inactive: #8c8c8c;
+      --vscode-tab-accent:      #007acc;
+      --vscode-tab-border:      #252526;
+      --vscode-close-hover:     rgba(255,255,255,.12);
+    }
+    [data-theme="dark"] .btn-filled:active:not(:disabled) { background: #6b9fe4; }
+    [data-theme="dark"] #unsupported-banner {
+      background: #3a1a17;
+      border-color: #6b2f2a;
+    }
+
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      font-family: var(--font-ui);
+      background: var(--md-surface-variant);
+      color: var(--md-on-surface);
+      overflow: hidden;
+    }
+
+    /* ── Layout: flex column ── */
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    /* ── App Bar ── */
+    #app-bar {
+      display: flex;
+      align-items: center;
+      height: 64px;
+      padding: 0 16px;
+      background: var(--md-surface);
+      border-bottom: 1px solid var(--md-outline);
+      box-shadow: var(--shadow-1);
+      gap: 12px;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+
+    #app-icon {
+      font-size: 26px;
+      color: var(--md-primary);
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    #app-spacer { flex: 1; }
+
+    /* ── Tab Bar (VS Code-style) ── */
+    #tab-bar {
+      display: flex;
+      align-items: stretch;
+      height: 35px;
+      background: var(--vscode-strip);
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: none;
+      flex-shrink: 0;
+    }
+    #tab-bar::-webkit-scrollbar { display: none; }
+
+    .tab {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 8px 0 14px;
+      min-width: 80px;
+      max-width: 200px;
+      flex-shrink: 0;
+      background: var(--vscode-tab-inactive-bg);
+      color: var(--vscode-tab-fg-inactive);
+      font-family: var(--font-ui);
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+      user-select: none;
+      border: none;
+      border-right: 1px solid var(--vscode-tab-border);
+      border-top: 2px solid transparent;
+      transition: background 0.08s, color 0.08s;
+      outline: none;
+    }
+    .tab:hover:not(.active) {
+      background: var(--vscode-tab-hover-bg);
+      color: var(--vscode-tab-fg-active);
+    }
+    .tab.active {
+      background: var(--vscode-tab-active-bg);
+      color: var(--vscode-tab-fg-active);
+      border-top-color: var(--vscode-tab-accent);
+    }
+    .tab:focus-visible { outline: 1px solid var(--vscode-tab-accent); outline-offset: -1px; }
+
+    .tab-dirty {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--md-error);
+      flex-shrink: 0;
+      display: none;
+    }
+    .tab.dirty .tab-dirty { display: block; }
+    .tab.dirty:hover .tab-dirty { display: none; }
+
+    .tab-name {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tab-close {
+      width: 18px;
+      height: 18px;
+      border: none;
+      border-radius: 3px;
+      background: transparent;
+      color: var(--vscode-tab-fg-inactive);
+      cursor: pointer;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      visibility: hidden;
+      opacity: 0;
+      transition: background 0.1s, opacity 0.1s;
+    }
+    .tab:hover .tab-close,
+    .tab.active .tab-close { visibility: visible; opacity: 0.7; }
+    .tab:hover .tab-close { opacity: 1; }
+    .tab.dirty .tab-close { visibility: hidden !important; opacity: 0 !important; }
+    .tab.dirty:hover .tab-close { visibility: visible !important; opacity: 1 !important; }
+    .tab-close:hover { background: var(--vscode-close-hover); color: var(--vscode-tab-fg-active); }
+    .tab-close .material-icons { font-size: 14px; }
+
+    #btn-new-tab {
+      width: 35px;
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      color: var(--vscode-tab-fg-inactive);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      align-self: stretch;
+      margin: 0;
+      transition: background 0.1s, color 0.1s;
+    }
+    #btn-new-tab:hover {
+      background: var(--vscode-tab-hover-bg);
+      color: var(--vscode-tab-fg-active);
+    }
+    #btn-new-tab:focus-visible { outline: 1px solid var(--vscode-tab-accent); outline-offset: -1px; }
+    #btn-new-tab .material-icons { font-size: 18px; }
+
+    #btn-group {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      height: 36px;
+      padding: 0 16px;
+      border: none;
+      border-radius: 18px;
+      font-family: var(--font-ui);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s, box-shadow 0.15s;
+      white-space: nowrap;
+      outline: none;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn:focus-visible {
+      outline: 2px solid var(--md-primary);
+      outline-offset: 2px;
+    }
+    .btn:disabled {
+      opacity: 0.38;
+      cursor: not-allowed;
+    }
+    .btn-icon {
+      font-size: 18px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+    }
+
+    .btn-text {
+      background: transparent;
+      color: var(--md-primary);
+    }
+    .btn-text:hover:not(:disabled) { background: var(--md-ripple); }
+    .btn-text:active:not(:disabled) { background: rgba(26,115,232,.2); }
+
+    .btn-outlined {
+      background: transparent;
+      color: var(--md-primary);
+      border: 1px solid var(--md-outline);
+    }
+    .btn-outlined:hover:not(:disabled) { background: var(--md-ripple); }
+    .btn-outlined:active:not(:disabled) { background: rgba(26,115,232,.2); }
+
+    .btn-filled {
+      background: var(--md-primary);
+      color: var(--md-on-primary);
+      box-shadow: var(--shadow-1);
+    }
+    .btn-filled:hover:not(:disabled) {
+      background: var(--md-primary-hover);
+      box-shadow: var(--shadow-2);
+    }
+    .btn-filled:active:not(:disabled) {
+      background: #0f4da3;
+      box-shadow: none;
+    }
+
+    /* ── Editor Container ── */
+    #editor-container {
+      flex: 1;
+      overflow: hidden;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #editor-card {
+      width: 100%;
+      background: var(--md-surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-1);
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+    }
+
+    #editor {
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      padding: 20px 24px;
+      border: none;
+      border-radius: var(--radius);
+      background: transparent;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--md-on-surface);
+      resize: none;
+      outline: none;
+      tab-size: 2;
+      -moz-tab-size: 2;
+    }
+    #editor:focus {
+      box-shadow: inset 0 0 0 2px var(--md-primary);
+      border-radius: var(--radius);
+    }
+
+    /* ── Drag & Drop overlay ── */
+    #editor-card { position: relative; }
+
+    #drop-zone-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(26,115,232,.08);
+      backdrop-filter: blur(2px);
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 12px;
+      pointer-events: none;
+    }
+    #drop-zone-overlay.visible { display: flex; }
+    #drop-zone-overlay::before {
+      content: '';
+      position: absolute;
+      inset: 12px;
+      border: 2px dashed var(--md-primary);
+      border-radius: 12px;
+      opacity: 0.6;
+    }
+    #drop-zone-overlay .drop-icon {
+      font-size: 48px;
+      color: var(--md-primary);
+    }
+    #drop-zone-overlay .drop-label {
+      font-size: 20px;
+      font-weight: 500;
+      color: var(--md-primary);
+    }
+    #drop-zone-overlay .drop-sub {
+      font-size: 13px;
+      color: var(--md-on-surface-sub);
+    }
+
+    /* ── Status Bar ── */
+    #status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 28px;
+      padding: 0 16px;
+      background: var(--md-surface-variant);
+      border-top: 1px solid var(--md-outline);
+      font-size: 12px;
+      color: var(--md-on-surface-sub);
+      flex-shrink: 0;
+    }
+
+    #status-left { display: flex; align-items: center; gap: 12px; }
+    #status-right { display: flex; align-items: center; gap: 16px; }
+    #status-divider {
+      width: 1px;
+      height: 14px;
+      background: var(--md-outline);
+    }
+
+    #font-size-ctrl {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+    #font-size-ctrl button {
+      width: 16px;
+      height: 16px;
+      border: none;
+      background: transparent;
+      color: var(--md-on-surface-sub);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1;
+      border-radius: 3px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.1s, color 0.1s;
+    }
+    #font-size-ctrl button:hover {
+      background: var(--md-outline);
+      color: var(--md-on-surface);
+    }
+    #font-size-label {
+      min-width: 28px;
+      text-align: center;
+      font-size: 11px;
+      user-select: none;
+    }
+
+    /* ── Unsupported Browser Banner ── */
+    #unsupported-banner {
+      display: none;
+      padding: 12px 16px;
+      background: #fce8e6;
+      border-bottom: 1px solid #f5c6c2;
+      color: var(--md-error);
+      font-size: 13px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    #unsupported-banner.visible { display: block; }
+
+    /* ── Snackbar ── */
+    #snackbar {
+      position: fixed;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--md-inverse-surface);
+      color: var(--md-on-inverse-surface);
+      padding: 12px 20px;
+      border-radius: 6px;
+      font-size: 13px;
+      box-shadow: var(--shadow-2);
+      z-index: 1000;
+      opacity: 0;
+      transition: transform 0.25s ease, opacity 0.25s ease;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    #snackbar.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* ── Dialog ── */
+    #dialog-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.32);
+      z-index: 500;
+      align-items: center;
+      justify-content: center;
+    }
+    #dialog-backdrop.visible { display: flex; }
+
+    #dialog {
+      background: var(--md-surface);
+      border-radius: 16px;
+      padding: 24px;
+      width: 320px;
+      box-shadow: 0 8px 30px rgba(0,0,0,.3);
+    }
+    #dialog h3 {
+      font-size: 18px;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+    #dialog p {
+      font-size: 14px;
+      color: var(--md-on-surface-sub);
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+    #dialog-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    /* ── Theme Menu ── */
+    #theme-menu-wrapper { position: relative; flex-shrink: 0; }
+
+    #btn-theme {
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      border: none;
+      border-radius: 50%;
+      background: transparent;
+      color: var(--md-on-surface-sub);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, color 0.15s;
+    }
+    #btn-theme:hover { background: rgba(95, 99, 104, 0.1); color: var(--md-on-surface); }
+    [data-theme="dark"] #btn-theme:hover { background: rgba(154, 160, 166, 0.1); }
+    #btn-theme:focus-visible { outline: 2px solid var(--md-primary); outline-offset: 2px; }
+    #btn-theme .material-icons { font-size: 20px; }
+
+    #theme-menu {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      background: var(--md-surface);
+      border: 1px solid var(--md-outline);
+      border-radius: 10px;
+      box-shadow: var(--shadow-2);
+      min-width: 160px;
+      z-index: 200;
+      overflow: hidden;
+      padding: 4px 0;
+    }
+
+    .theme-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 10px 14px;
+      border: none;
+      background: transparent;
+      color: var(--md-on-surface);
+      font-family: var(--font-ui);
+      font-size: 14px;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.12s;
+    }
+    .theme-option:hover { background: var(--md-ripple); }
+    .theme-option:focus-visible { outline: 2px solid var(--md-primary); outline-offset: -2px; }
+    .theme-option .material-icons { font-size: 18px; color: var(--md-on-surface-sub); }
+    .theme-option .check-icon {
+      margin-left: auto;
+      color: var(--md-primary);
+      visibility: hidden;
+    }
+    .theme-option.active .check-icon { visibility: visible; }
+    .theme-option.active { color: var(--md-primary); }
+    .theme-option.active .material-icons { color: var(--md-primary); }
+
+    /* ── Scrollbar (textarea internal) ── */
+    #editor::-webkit-scrollbar { width: 8px; }
+    #editor::-webkit-scrollbar-track { background: transparent; }
+    #editor::-webkit-scrollbar-thumb {
+      background: var(--md-outline);
+      border-radius: 4px;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      #editor-container { padding: 6px; }
+      #editor { padding: 12px; }
+      .btn span:not(.btn-icon) { display: none; }
+      .btn { padding: 0 10px; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Unsupported Banner -->
+  <div id="unsupported-banner">
+    このブラウザは File System Access API に対応していません。Chrome 86以降を使用してください。
+  </div>
+
+  <!-- App Bar -->
+  <header id="app-bar">
+    <span id="app-icon" class="material-icons">article</span>
+    <div id="app-spacer"></div>
+    <div id="theme-menu-wrapper">
+      <button id="btn-theme" title="テーマ切り替え" aria-label="テーマ切り替え"
+              aria-haspopup="true" aria-expanded="false">
+        <span class="material-icons">computer</span>
+      </button>
+      <div id="theme-menu" hidden role="menu">
+        <button class="theme-option" data-pref="system" role="menuitem">
+          <span class="material-icons">computer</span>
+          <span>System</span>
+          <span class="material-icons check-icon">check</span>
+        </button>
+        <button class="theme-option" data-pref="light" role="menuitem">
+          <span class="material-icons">light_mode</span>
+          <span>Light</span>
+          <span class="material-icons check-icon">check</span>
+        </button>
+        <button class="theme-option" data-pref="dark" role="menuitem">
+          <span class="material-icons">dark_mode</span>
+          <span>Dark</span>
+          <span class="material-icons check-icon">check</span>
+        </button>
+      </div>
+    </div>
+    <div id="btn-group">
+      <button class="btn btn-text" id="btn-new" title="新規 (Ctrl+N)">
+        <span class="btn-icon material-icons">add</span><span>New</span>
+      </button>
+      <button class="btn btn-outlined" id="btn-open" title="開く (Ctrl+O)">
+        <span class="btn-icon material-icons">folder_open</span><span>Open</span>
+      </button>
+      <button class="btn btn-filled" id="btn-save" title="保存 (Ctrl+S) / 名前を付けて保存 (Ctrl+Shift+S)">
+        <span class="btn-icon material-icons">save</span><span>Save</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Tab Bar -->
+  <div id="tab-bar" role="tablist" aria-label="Open files">
+    <button id="btn-new-tab" title="新しいタブ (Ctrl+N)" aria-label="新しいタブ">
+      <span class="material-icons">add</span>
+    </button>
+  </div>
+
+  <!-- Editor Container -->
+  <main id="editor-container">
+    <div id="editor-card">
+      <textarea id="editor" spellcheck="false" autocomplete="off"
+        placeholder="ここに入力するか、ファイルをドロップしてください…"></textarea>
+    </div>
+  </main>
+
+  <!-- Status Bar -->
+  <footer id="status-bar">
+    <div id="status-left">
+      <span id="status-message">Ready</span>
+    </div>
+    <div id="status-right">
+      <span id="status-cursor">Ln 1, Col 1</span>
+      <div id="status-divider"></div>
+      <span id="status-count">0 chars · 0 words</span>
+      <div id="status-divider2" class="status-divider" style="width:1px;height:14px;background:var(--md-outline)"></div>
+      <div id="font-size-ctrl">
+        <button id="btn-fs-dec" title="フォントを小さく (Ctrl+-)">−</button>
+        <span id="font-size-label">14px</span>
+        <button id="btn-fs-inc" title="フォントを大きく (Ctrl+=)">+</button>
+      </div>
+    </div>
+  </footer>
+
+</div>
+
+<!-- Full-window Drop Zone Overlay -->
+<div id="drop-zone-overlay" aria-hidden="true">
+  <span class="material-icons drop-icon">upload_file</span>
+  <span class="drop-label">ファイルをドロップして開く</span>
+  <span class="drop-sub">複数ファイルは別々のタブで開きます</span>
+</div>
+
+<!-- Snackbar -->
+<div id="snackbar"></div>
+
+<!-- Unsaved Changes Dialog -->
+<div id="dialog-backdrop">
+  <div id="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+    <h3 id="dialog-title">変更を破棄しますか？</h3>
+    <p id="dialog-body">保存されていない変更があります。このまま続けると変更は失われます。</p>
+    <div id="dialog-actions">
+      <button class="btn btn-text" id="dialog-cancel">キャンセル</button>
+      <button class="btn btn-filled" id="dialog-discard" style="background:#d93025">破棄する</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── Tab State ──
+  let tabs = [];
+  let activeTabId = null;
+  let nextTabId = 0;
+
+  // ── DOM Refs ──
+  const editor        = document.getElementById('editor');
+  const tabBar        = document.getElementById('tab-bar');
+  const statusMsg     = document.getElementById('status-message');
+  const statusCursor  = document.getElementById('status-cursor');
+  const statusCount   = document.getElementById('status-count');
+  const snackbar      = document.getElementById('snackbar');
+  const dialogBdrop   = document.getElementById('dialog-backdrop');
+  const dialogDiscard = document.getElementById('dialog-discard');
+  const dialogCancel  = document.getElementById('dialog-cancel');
+  const editorCard    = document.getElementById('editor-card');
+  const btnNew        = document.getElementById('btn-new');
+  const btnOpen       = document.getElementById('btn-open');
+  const btnSave       = document.getElementById('btn-save');
+  const btnTheme      = document.getElementById('btn-theme');
+  const themeMenu     = document.getElementById('theme-menu');
+  const unsBanner     = document.getElementById('unsupported-banner');
+
+  // ── Theme ──
+  const THEME_ICONS = { system: 'computer', light: 'light_mode', dark: 'dark_mode' };
+
+  function getSystemTheme() {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+
+  function applyThemePref(pref) {
+    localStorage.setItem('theme', pref);
+    const effective = pref === 'system' ? getSystemTheme() : pref;
+    document.documentElement.dataset.theme = effective;
+    btnTheme.querySelector('.material-icons').textContent = THEME_ICONS[pref];
+    btnTheme.setAttribute('aria-label', { system: 'テーマ: システム', light: 'テーマ: ライト', dark: 'テーマ: ダーク' }[pref]);
+    document.querySelectorAll('.theme-option').forEach(opt => {
+      opt.classList.toggle('active', opt.dataset.pref === pref);
+    });
+  }
+
+  function openThemeMenu() {
+    themeMenu.hidden = false;
+    btnTheme.setAttribute('aria-expanded', 'true');
+    themeMenu.querySelector('.theme-option.active, .theme-option').focus();
+  }
+
+  function closeThemeMenu(returnFocus = true) {
+    themeMenu.hidden = true;
+    btnTheme.setAttribute('aria-expanded', 'false');
+    if (returnFocus) btnTheme.focus();
+  }
+
+  btnTheme.addEventListener('click', e => {
+    e.stopPropagation();
+    themeMenu.hidden ? openThemeMenu() : closeThemeMenu(false);
+  });
+
+  themeMenu.addEventListener('click', e => {
+    const opt = e.target.closest('.theme-option');
+    if (opt) { applyThemePref(opt.dataset.pref); closeThemeMenu(); }
+  });
+
+  themeMenu.addEventListener('keydown', e => {
+    const opts = [...themeMenu.querySelectorAll('.theme-option')];
+    const idx = opts.indexOf(document.activeElement);
+    if (e.key === 'ArrowDown') { e.preventDefault(); opts[(idx + 1) % opts.length].focus(); }
+    if (e.key === 'ArrowUp')   { e.preventDefault(); opts[(idx - 1 + opts.length) % opts.length].focus(); }
+    if (e.key === 'Escape')    { closeThemeMenu(); }
+  });
+
+  document.addEventListener('click', () => { if (!themeMenu.hidden) closeThemeMenu(false); });
+
+  // Follow OS changes when pref is 'system'
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    if ((localStorage.getItem('theme') || 'system') === 'system') {
+      document.documentElement.dataset.theme = getSystemTheme();
+    }
+  });
+
+  // Init
+  applyThemePref(localStorage.getItem('theme') || 'system');
+
+  // ── API Support Check ──
+  const hasFileAPI = 'showOpenFilePicker' in window;
+  if (!hasFileAPI) {
+    unsBanner.classList.add('visible');
+    btnOpen.disabled   = true;
+    btnSave.disabled   = true;
+  }
+
+  let snackbarTimer = null;
+  let dialogResolver = null;  // Promise resolver for dialog
+
+  // ── Tab Management ──
+  function createTab(fileName = 'Untitled', fileHandle = null, content = '', isDirty = false) {
+    const id = ++nextTabId;
+    tabs.push({ id, fileName, fileHandle, content, isDirty, scrollTop: 0, selStart: 0, selEnd: 0 });
+    return id;
+  }
+
+  function getActiveTab() {
+    return tabs.find(t => t.id === activeTabId) || null;
+  }
+
+  function saveEditorToTab() {
+    const tab = getActiveTab();
+    if (!tab) return;
+    tab.content = editor.value;
+    tab.scrollTop = editor.scrollTop;
+    tab.selStart = editor.selectionStart;
+    tab.selEnd = editor.selectionEnd;
+  }
+
+  function loadTabIntoEditor(tab) {
+    editor.value = tab.content;
+    requestAnimationFrame(() => {
+      editor.scrollTop = tab.scrollTop || 0;
+      const len = tab.content.length;
+      const s = Math.min(tab.selStart || 0, len);
+      const e2 = Math.min(tab.selEnd || s, len);
+      editor.setSelectionRange(s, e2);
+    });
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function renderTabs() {
+    tabBar.querySelectorAll('.tab').forEach(el => el.remove());
+    const btnNewTab = document.getElementById('btn-new-tab');
+    tabs.forEach(tab => {
+      const el = document.createElement('div');
+      el.className = 'tab' + (tab.id === activeTabId ? ' active' : '') + (tab.isDirty ? ' dirty' : '');
+      el.dataset.id = tab.id;
+      el.setAttribute('role', 'tab');
+      el.setAttribute('aria-selected', String(tab.id === activeTabId));
+      el.setAttribute('title', tab.fileName);
+      el.tabIndex = 0;
+      el.innerHTML =
+        '<span class="tab-dirty" aria-hidden="true"></span>' +
+        '<span class="tab-name">' + escapeHtml(tab.fileName) + '</span>' +
+        '<button class="tab-close" aria-label="' + escapeHtml(tab.fileName) + 'を閉じる" tabindex="-1">' +
+          '<span class="material-icons">close</span>' +
+        '</button>';
+      tabBar.insertBefore(el, btnNewTab);
+    });
+    const activeEl = tabBar.querySelector('.tab.active');
+    if (activeEl) activeEl.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
+
+  async function switchToTab(id) {
+    if (id === activeTabId) { editor.focus(); return; }
+    saveEditorToTab();
+    activeTabId = id;
+    loadTabIntoEditor(getActiveTab());
+    renderTabs();
+    updateUI();
+    updateCursorPos();
+    editor.focus();
+  }
+
+  async function closeTab(id) {
+    const tab = tabs.find(t => t.id === id);
+    if (!tab) return;
+    if (tab.isDirty) {
+      if (id !== activeTabId) {
+        saveEditorToTab();
+        activeTabId = id;
+        loadTabIntoEditor(tab);
+        renderTabs();
+        updateUI();
+      }
+      const discard = await showUnsavedDialog(
+        '"' + tab.fileName + '" を閉じますか？',
+        '保存されていない変更があります。閉じると変更は失われます。'
+      );
+      if (!discard) return;
+    }
+    const idx = tabs.findIndex(t => t.id === id);
+    tabs.splice(idx, 1);
+    if (tabs.length === 0) {
+      const newId = createTab();
+      activeTabId = newId;
+      loadTabIntoEditor(getActiveTab());
+    } else if (id === activeTabId) {
+      const newIdx = Math.min(idx, tabs.length - 1);
+      activeTabId = tabs[newIdx].id;
+      loadTabIntoEditor(getActiveTab());
+    }
+    renderTabs();
+    updateUI();
+    updateCursorPos();
+    editor.focus();
+  }
+
+  // ── UI Update ──
+  function updateUI() {
+    const tab = getActiveTab();
+    if (!tab) return;
+    document.title = (tab.isDirty ? '* ' : '') + tab.fileName + ' — memo';
+  }
+
+  function updateCursorPos() {
+    const val = editor.value;
+    const pos = editor.selectionStart;
+    const lines = val.substring(0, pos).split('\n');
+    const ln = lines.length;
+    const col = lines[lines.length - 1].length + 1;
+    statusCursor.textContent = 'Ln ' + ln + ', Col ' + col;
+    const chars = val.length;
+    const words = val.trim() === '' ? 0 : val.trim().split(/\s+/).length;
+    statusCount.textContent = chars.toLocaleString() + ' chars · ' + words.toLocaleString() + ' words';
+  }
+
+  function setStatus(msg) {
+    statusMsg.textContent = msg;
+  }
+
+  // ── Snackbar ──
+  function showSnackbar(msg, duration = 3000) {
+    snackbar.textContent = msg;
+    snackbar.classList.add('show');
+    if (snackbarTimer) clearTimeout(snackbarTimer);
+    snackbarTimer = setTimeout(() => {
+      snackbar.classList.remove('show');
+    }, duration);
+  }
+
+  // ── Unsaved Changes Dialog ──
+  // Returns a Promise<boolean>: true = discard, false = cancel
+  function showUnsavedDialog(title = '変更を破棄しますか？', body = '保存されていない変更があります。このまま続けると変更は失われます。') {
+    document.getElementById('dialog-title').textContent = title;
+    document.getElementById('dialog-body').textContent = body;
+    dialogBdrop.classList.add('visible');
+    dialogDiscard.focus();
+    return new Promise(resolve => { dialogResolver = resolve; });
+  }
+
+  function closeDialog(result) {
+    dialogBdrop.classList.remove('visible');
+    if (dialogResolver) {
+      dialogResolver(result);
+      dialogResolver = null;
+    }
+  }
+
+  dialogDiscard.addEventListener('click', () => closeDialog(true));
+  dialogCancel.addEventListener('click',  () => closeDialog(false));
+  dialogBdrop.addEventListener('click', e => {
+    if (e.target === dialogBdrop) closeDialog(false);
+  });
+  dialogBdrop.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeDialog(false);
+  });
+
+  // ── Mark dirty/clean ──
+  function markDirty() {
+    const tab = getActiveTab();
+    if (tab && !tab.isDirty) {
+      tab.isDirty = true;
+      renderTabs();
+      updateUI();
+    }
+  }
+  function markClean() {
+    const tab = getActiveTab();
+    if (tab) {
+      tab.isDirty = false;
+      renderTabs();
+      updateUI();
+    }
+  }
+
+  // ── File Operations ──
+
+  async function newFile() {
+    const id = createTab();
+    await switchToTab(id);
+    setStatus('New file');
+  }
+
+  async function openFile() {
+    if (!hasFileAPI) return;
+    try {
+      const [handle] = await window.showOpenFilePicker({
+        types: [{ description: 'Text files', accept: { 'text/*': ['.txt', '.md', '.csv', '.json', '.xml', '.html', '.css', '.js', '.ts', '.yaml', '.yml', '.log', '.ini', '.toml'] } }],
+        multiple: false,
+      });
+      await loadFromHandle(handle);
+    } catch (e) {
+      if (e.name !== 'AbortError') {
+        console.error(e);
+        showSnackbar(e.name === 'NotAllowedError' ? 'ファイルへのアクセス権限がありません。' : 'ファイルを開けませんでした: ' + e.message);
+      }
+    }
+  }
+
+  async function loadFromHandle(handle) {
+    saveEditorToTab();
+    // ドロップ由来のハンドルは readwrite 権限がない場合があるので確認
+    if (handle.queryPermission) {
+      const perm = await handle.queryPermission({ mode: 'readwrite' });
+      if (perm === 'prompt') await handle.requestPermission({ mode: 'readwrite' });
+    }
+    const file = await handle.getFile();
+    const text = await file.text();
+    // Reuse current tab if it's an empty untitled tab
+    const current = getActiveTab();
+    if (current && !current.fileHandle && current.content === '' && !current.isDirty) {
+      current.fileName = handle.name;
+      current.fileHandle = handle;
+      current.content = text;
+      current.isDirty = false;
+      activeTabId = current.id;
+    } else {
+      const id = createTab(handle.name, handle, text, false);
+      activeTabId = id;
+    }
+    editor.value = text;
+    editor.scrollTop = 0;
+    renderTabs();
+    updateUI();
+    updateCursorPos();
+    setStatus('Opened: ' + handle.name);
+    showSnackbar(handle.name + ' を開きました');
+    editor.focus();
+  }
+
+  async function saveFile() {
+    if (!hasFileAPI) return;
+    const tab = getActiveTab();
+    if (!tab) return;
+    if (!tab.fileHandle) { await saveAs(); return; }
+    tab.content = editor.value;
+    let writable;
+    try {
+      writable = await tab.fileHandle.createWritable();
+      await writable.write(tab.content);
+      await writable.close();
+      markClean();
+      setStatus('Saved: ' + tab.fileName);
+      showSnackbar('保存しました');
+    } catch (e) {
+      if (writable) await writable.abort().catch(() => {});
+      if (e.name !== 'AbortError') {
+        console.error(e);
+        showSnackbar(e.name === 'NotAllowedError' ? '書き込み権限がありません。再度保存してください。' : '保存に失敗しました: ' + e.message);
+      }
+    }
+  }
+
+  async function saveAs() {
+    if (!hasFileAPI) return;
+    const tab = getActiveTab();
+    if (!tab) return;
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: tab.fileName === 'Untitled' ? 'untitled.txt' : tab.fileName,
+        types: [{ description: 'Text files', accept: { 'text/plain': ['.txt', '.md', '.csv', '.log'] } }],
+      });
+      tab.content = editor.value;
+      let writable;
+      try {
+        writable = await handle.createWritable();
+        await writable.write(tab.content);
+        await writable.close();
+      } catch (writeErr) {
+        if (writable) await writable.abort().catch(() => {});
+        throw writeErr;
+      }
+      tab.fileHandle = handle;
+      tab.fileName = handle.name;
+      markClean();
+      renderTabs();
+      setStatus('Saved as: ' + handle.name);
+      showSnackbar(handle.name + ' として保存しました');
+    } catch (e) {
+      if (e.name !== 'AbortError') {
+        console.error(e);
+        showSnackbar(e.name === 'NotAllowedError' ? '書き込み権限がありません。' : '保存に失敗しました: ' + e.message);
+      }
+    }
+  }
+
+  // ── Drag & Drop (full-window) ──
+  const dropZoneOverlay = document.getElementById('drop-zone-overlay');
+  let windowDragCounter = 0;
+
+  async function openDroppedFile(item, isFirst) {
+    try {
+      if (hasFileAPI && item.getAsFileSystemHandle) {
+        const handle = await item.getAsFileSystemHandle();
+        if (handle.kind === 'file') { await loadFromHandle(handle); return; }
+      }
+      const file = item.getAsFile();
+      if (!file) return;
+      const text = await file.text();
+      saveEditorToTab();
+      const current = getActiveTab();
+      if (isFirst && current && !current.fileHandle && current.content === '' && !current.isDirty) {
+        current.fileName = file.name;
+        current.content = text;
+        current.isDirty = false;
+        activeTabId = current.id;
+      } else {
+        const id = createTab(file.name, null, text, false);
+        activeTabId = id;
+      }
+      editor.value = text;
+      editor.scrollTop = 0;
+      renderTabs();
+      updateUI();
+      updateCursorPos();
+      setStatus('Opened: ' + file.name);
+    } catch (err) {
+      console.error(err);
+      showSnackbar('ファイルを読み込めませんでした: ' + (err.message || err));
+    }
+  }
+
+  document.addEventListener('dragenter', e => {
+    if (!e.dataTransfer.types.includes('Files')) return;
+    e.preventDefault();
+    windowDragCounter++;
+    dropZoneOverlay.classList.add('visible');
+  });
+
+  document.addEventListener('dragleave', e => {
+    if (!e.dataTransfer.types.includes('Files')) return;
+    windowDragCounter--;
+    if (windowDragCounter <= 0) {
+      windowDragCounter = 0;
+      dropZoneOverlay.classList.remove('visible');
+    }
+  });
+
+  document.addEventListener('dragover', e => {
+    if (e.dataTransfer.types.includes('Files')) e.preventDefault();
+  });
+
+  document.addEventListener('drop', async e => {
+    e.preventDefault();
+    windowDragCounter = 0;
+    dropZoneOverlay.classList.remove('visible');
+    const items = [...e.dataTransfer.items].filter(i => i.kind === 'file');
+    if (items.length === 0) return;
+    for (let i = 0; i < items.length; i++) {
+      await openDroppedFile(items[i], i === 0);
+    }
+    if (items.length > 1) showSnackbar(items.length + ' ファイルを開きました');
+    editor.focus();
+  });
+
+  // ── Tab Bar Events ──
+  tabBar.addEventListener('click', e => {
+    const closeBtn = e.target.closest('.tab-close');
+    if (closeBtn) {
+      e.stopPropagation();
+      const tabEl = closeBtn.closest('.tab');
+      if (tabEl) closeTab(+tabEl.dataset.id);
+      return;
+    }
+    const tabEl = e.target.closest('.tab');
+    if (tabEl) switchToTab(+tabEl.dataset.id);
+  });
+  tabBar.addEventListener('keydown', e => {
+    const tabEl = e.target.closest('.tab');
+    if (!tabEl) return;
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); switchToTab(+tabEl.dataset.id); }
+    if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); closeTab(+tabEl.dataset.id); }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      const tabEls = [...tabBar.querySelectorAll('.tab')];
+      const idx = tabEls.indexOf(tabEl);
+      const next = e.key === 'ArrowRight' ? tabEls[idx + 1] : tabEls[idx - 1];
+      if (next) { next.focus(); switchToTab(+next.dataset.id); }
+    }
+  });
+  document.getElementById('btn-new-tab').addEventListener('click', newFile);
+
+  // ── Editor Events ──
+  editor.addEventListener('input', () => { markDirty(); updateCursorPos(); });
+  editor.addEventListener('keydown', e => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const start = editor.selectionStart;
+      const end = editor.selectionEnd;
+      editor.value = editor.value.substring(0, start) + '  ' + editor.value.substring(end);
+      editor.selectionStart = editor.selectionEnd = start + 2;
+      markDirty();
+      updateCursorPos();
+    }
+  });
+  editor.addEventListener('click', updateCursorPos);
+  editor.addEventListener('keyup', updateCursorPos);
+  editor.addEventListener('selectionchange', updateCursorPos);
+
+  // ── Button Events ──
+  btnNew.addEventListener('click',    newFile);
+  btnOpen.addEventListener('click',   openFile);
+  btnSave.addEventListener('click',   saveFile);
+
+  // ── Keyboard Shortcuts ──
+  document.addEventListener('keydown', e => {
+    const ctrl = e.ctrlKey || e.metaKey;
+    if (!ctrl) return;
+    if (e.key === 'n' || e.key === 'N') {
+      e.preventDefault(); newFile();
+    } else if (e.key === 'o' || e.key === 'O') {
+      e.preventDefault(); openFile();
+    } else if ((e.key === 's' || e.key === 'S') && e.shiftKey) {
+      e.preventDefault(); saveAs();
+    } else if (e.key === 's' || e.key === 'S') {
+      e.preventDefault(); saveFile();
+    } else if (e.key === 'w' || e.key === 'W') {
+      e.preventDefault(); if (activeTabId !== null) closeTab(activeTabId);
+    } else if (e.key === '=' || e.key === '+') {
+      e.preventDefault(); changeFontSize(1);
+    } else if (e.key === '-' || e.key === '_') {
+      e.preventDefault(); changeFontSize(-1);
+    }
+  }, true);
+
+  // ── beforeunload ──
+  window.addEventListener('beforeunload', e => {
+    if (tabs.some(t => t.isDirty)) {
+      e.preventDefault();
+      e.returnValue = '保存されていない変更があります。このページを離れますか？';
+      return e.returnValue;
+    }
+  });
+
+  // ── Font Size ──
+  let fontSize = parseInt(localStorage.getItem('fontSize') || '14', 10);
+  const fontSizeLabel = document.getElementById('font-size-label');
+
+  function applyFontSize() {
+    editor.style.fontSize = fontSize + 'px';
+    fontSizeLabel.textContent = fontSize + 'px';
+    localStorage.setItem('fontSize', fontSize);
+  }
+
+  function changeFontSize(delta) {
+    const next = fontSize + delta;
+    if (next >= 8 && next <= 40) { fontSize = next; applyFontSize(); }
+  }
+
+  document.getElementById('btn-fs-dec').addEventListener('click', () => changeFontSize(-1));
+  document.getElementById('btn-fs-inc').addEventListener('click', () => changeFontSize(1));
+
+  // Ctrl+Wheel でも変更
+  editor.addEventListener('wheel', e => {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    e.preventDefault();
+    changeFontSize(e.deltaY < 0 ? 1 : -1);
+  }, { passive: false });
+
+  // ── Init ──
+  const initId = createTab();
+  activeTabId = initId;
+  renderTabs();
+  updateUI();
+  updateCursorPos();
+  applyFontSize();
+  setStatus('Ready');
+  editor.focus();
+</script>
+</body>
+</html>
