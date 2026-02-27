@@ -793,7 +793,7 @@
   // ── Tab Management ──
   function createTab(fileName = 'Untitled', fileHandle = null, content = '', isDirty = false) {
     const id = ++nextTabId;
-    tabs.push({ id, fileName, fileHandle, content, isDirty, scrollTop: 0, selStart: 0, selEnd: 0 });
+    tabs.push({ id, fileName, fileHandle, content, isDirty, scrollTop: 0, selStart: 0, selEnd: 0, lastModified: null });
     return id;
   }
 
@@ -1004,6 +1004,7 @@
     }
     const file = await handle.getFile();
     const text = await file.text();
+    const modTime = file.lastModified;
     // Reuse current tab if it's an empty untitled tab
     const current = getActiveTab();
     if (current && !current.fileHandle && current.content === '' && !current.isDirty) {
@@ -1011,9 +1012,12 @@
       current.fileHandle = handle;
       current.content = text;
       current.isDirty = false;
+      current.lastModified = modTime;
       activeTabId = current.id;
     } else {
       const id = createTab(handle.name, handle, text, false);
+      const newTab = tabs.find(t => t.id === id);
+      newTab.lastModified = modTime;
       activeTabId = id;
     }
     editor.value = text;
@@ -1037,6 +1041,8 @@
       writable = await tab.fileHandle.createWritable();
       await writable.write(tab.content);
       await writable.close();
+      const savedFile = await tab.fileHandle.getFile();
+      tab.lastModified = savedFile.lastModified;
       markClean();
       setStatus('Saved: ' + tab.fileName);
       showSnackbar('保存しました');
@@ -1064,6 +1070,7 @@
         writable = await handle.createWritable();
         await writable.write(tab.content);
         await writable.close();
+        tab.lastModified = null;
       } catch (writeErr) {
         if (writable) await writable.abort().catch(() => {});
         throw writeErr;
@@ -1078,6 +1085,70 @@
       if (e.name !== 'AbortError') {
         console.error(e);
         showSnackbar(e.name === 'NotAllowedError' ? '書き込み権限がありません。' : '保存に失敗しました: ' + e.message);
+      }
+    }
+  }
+
+  // ── External File Change Detection ──
+  const POLL_INTERVAL_MS = 3000;
+  let pollIntervalId = null;
+  let conflictTabIds = new Set();
+
+  async function pollExternalChanges() {
+    if (document.hidden) return;
+
+    for (const tab of tabs) {
+      if (!tab.fileHandle || tab.lastModified === null) continue;
+      if (conflictTabIds.has(tab.id)) continue;
+
+      let file;
+      try {
+        file = await tab.fileHandle.getFile();
+      } catch (err) {
+        if (err.name === 'NotAllowedError' || err.name === 'NotFoundError') {
+          tab.lastModified = null;
+          if (tab.id === activeTabId) {
+            showSnackbar('⚠ ファイルにアクセスできなくなりました: ' + tab.fileName);
+          }
+        }
+        continue;
+      }
+
+      if (file.lastModified === tab.lastModified) continue;
+
+      const newText = await file.text();
+      tab.lastModified = file.lastModified;
+
+      if (!tab.isDirty) {
+        tab.content = newText;
+        if (tab.id === activeTabId) {
+          const savedScroll = editor.scrollTop;
+          const savedSelStart = editor.selectionStart;
+          const savedSelEnd = editor.selectionEnd;
+          editor.value = newText;
+          editor.scrollTop = savedScroll;
+          editor.setSelectionRange(savedSelStart, savedSelEnd);
+          updateCursorPos();
+        }
+        setStatus('Reloaded: ' + tab.fileName);
+        showSnackbar(tab.fileName + ' が外部で変更されたため再読み込みしました');
+      } else if (tab.id === activeTabId) {
+        conflictTabIds.add(tab.id);
+        const discard = await showUnsavedDialog(
+          'ファイルが外部で変更されました',
+          '"' + tab.fileName + '" がディスク上で更新されました。あなたの編集は保存されていません。ディスクの内容で再読み込みしますか？\n\n・「再読み込み」: ディスクの最新内容に切り替える（編集内容は失われます）\n・「キャンセル」: 編集内容を保持する'
+        );
+        conflictTabIds.delete(tab.id);
+        if (discard) {
+          tab.content = newText;
+          tab.isDirty = false;
+          editor.value = newText;
+          editor.scrollTop = 0;
+          updateCursorPos();
+          renderTabs();
+          updateUI();
+          showSnackbar(tab.fileName + ' を再読み込みしました');
+        }
       }
     }
   }
@@ -1264,6 +1335,19 @@
   applyFontSize();
   setStatus('Ready');
   editor.focus();
+
+  // External file change polling
+  if (hasFileAPI) {
+    pollIntervalId = setInterval(pollExternalChanges, POLL_INTERVAL_MS);
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        if (!pollIntervalId) pollIntervalId = setInterval(pollExternalChanges, POLL_INTERVAL_MS);
+      } else {
+        clearInterval(pollIntervalId);
+        pollIntervalId = null;
+      }
+    });
+  }
 </script>
 </body>
 </html>
