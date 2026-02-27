@@ -1,40 +1,40 @@
 # memo
 
-ローカルファイルをブラウザから直接編集できるシングルファイルのテキストエディタ。
+A single-file text editor that lets you edit local files directly from the browser.
 
 ![screenshot](screenshot.png)
 
-## 使い方
+## Usage
 
-`index.html` を Chrome で開くだけで動作します（インストール・サーバー不要）。
+Just open `index.html` in Chrome — no installation or server required.
 
 ```
 open index.html
 ```
 
-## 機能
+## Features
 
-- **マルチタブ** — 複数ファイルを同時に開いて切り替え
-- **ファイル読み書き** — File System Access API により、ファイルをブラウザから直接上書き保存
-- **ドラッグ&ドロップ** — デスクトップからウィンドウ全体にドロップして開く（複数ファイル対応）
-- **テーマ** — ライト / ダーク / システム連動の3択
-- **フォントサイズ変更** — ステータスバーの `−`/`+` またはショートカットで調整
+- **Multi-tab** — Open and switch between multiple files at once
+- **Read/write files** — Overwrite files directly from the browser via the File System Access API
+- **Drag & drop** — Drop files from your desktop onto the window (supports multiple files)
+- **Themes** — Light / Dark / System (3 options)
+- **Font size** — Adjust with `−`/`+` in the status bar or keyboard shortcuts
 
-## ショートカット
+## Shortcuts
 
-| 操作 | ショートカット |
+| Action | Shortcut |
 |---|---|
-| 新規タブ | `Ctrl/Cmd + N` |
-| ファイルを開く | `Ctrl/Cmd + O` |
-| 保存 | `Ctrl/Cmd + S` |
-| 名前を付けて保存 | `Ctrl/Cmd + Shift + S` |
-| タブを閉じる | `Ctrl/Cmd + W` |
-| フォント拡大 | `Ctrl/Cmd + =` |
-| フォント縮小 | `Ctrl/Cmd + -` |
-| タブ切り替え | `←` / `→`（タブにフォーカス中） |
+| New tab | `Ctrl/Cmd + N` |
+| Open file | `Ctrl/Cmd + O` |
+| Save | `Ctrl/Cmd + S` |
+| Save as | `Ctrl/Cmd + Shift + S` |
+| Close tab | `Ctrl/Cmd + W` |
+| Increase font | `Ctrl/Cmd + =` |
+| Decrease font | `Ctrl/Cmd + -` |
+| Switch tabs | `←` / `→` (while tab is focused) |
 
-## 動作環境
+## Requirements
 
-Chrome 86 以上（File System Access API 対応ブラウザ）。
+Chrome 86+ (browsers with File System Access API support).
 
-それ以外のブラウザではファイルの読み取りとドラッグ&ドロップは動作しますが、上書き保存には対応しません。
+Other browsers support file reading and drag & drop, but not overwrite saving.
