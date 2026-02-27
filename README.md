@@ -19,6 +19,7 @@ open index.html
 - **Drag & drop** — Drop files from your desktop onto the window (supports multiple files)
 - **Themes** — Light / Dark / System (3 options)
 - **Font size** — Adjust with `−`/`+` in the status bar or keyboard shortcuts
+- **Auto-reload** — Detects external file changes (e.g. iCloud Drive sync) every 3 seconds and reloads automatically
 
 ## Shortcuts
 
